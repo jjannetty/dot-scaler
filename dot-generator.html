@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title></title>
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans|Oswald" rel="stylesheet">
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="https://code.jquery.com/jquery-2.2.4.min.js" integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44=" crossorigin="anonymous"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/js/select2.min.js"></script>
+    <script type="text/javascript">
+      $(document).ready(function(){
+        $('select').select2({
+          minimumResultsForSearch: Infinity
+        });
+      });
+
+      function calculateDotGeometry () {
+        var count = document.getElementsByName('dot_count')[0].value;
+        var diam = document.getElementsByName('dot_diameter')[0].value;
+        var oldDiam;
+        var oldDist;
+        var space = document.getElementsByName('dot_space')[0].value;
+        var oldSpace;
+        var dist = diam / 2;
+        var incr = (document.getElementsByName('dot_increment')[0].value / 100) + 1;
+        var data = new Array();
+
+        data[0] = {radius: dist, dist: dist}
+
+        for (i = 1; i <= count - 1; i++) {
+          oldDiam = diam;
+          oldDist = dist;
+          oldSpace = space;
+          diam = calcDiam(oldDiam, incr);
+          space = oldSpace * incr;
+          dist = calcDist(oldDist, oldDiam, diam, space);
+          data[i] = {radius: diam / 2, dist: dist}
+        }
+
+        console.log(data);
+
+        drawDots(data);
+      }
+
+      function calcDiam (oldDiam, incr) {
+        var diam = oldDiam * incr;
+
+        return diam;
+      }
+
+      function calcDist (oldDist, oldDiam, diam, space) {
+        var dist = (oldDiam/2) + (diam/2) + space + oldDist;
+
+        return dist;
+      }
+
+      function calcYPosition (radius, height) {
+        var select = document.getElementById('dot_orientation');
+        var orientation = select.options[select.selectedIndex].text;
+
+        if (orientation == 'Top') {
+          return radius
+        }
+        else if (orientation == 'Middle') {
+          return height/2;
+        }
+        else {
+          return height - radius;
+        }
+      }
+
+      function drawDots (data) {
+        d3.select('svg').remove();
+
+        var fill = document.getElementsByName('dot_fill')[0].value;
+        var maxRadius = Math.max.apply(Math, data.map(function(d){return d.radius;}));
+        var height = maxRadius * 2;
+        var width = Math.max.apply(Math, data.map(function(d){return d.dist;})) + maxRadius;
+        var chart = d3.select('.dots').append('svg')
+                      .attr('viewBox',['0 0', width, height].join(' '))
+
+        chart.selectAll('circle')
+          .data(data)
+          .enter()
+          .append('circle')
+            .attr('cx', function(d){return d.dist})
+            .attr('cy', function(d){return calcYPosition(d.radius, height)})
+            .attr('r', function(d){return d.radius})
+            .attr('fill', ['#', fill].join(''));
+
+        var html = d3.select('.dots').html();
+
+        d3.select('.html').text(html);
+
+      }
+    </script>
+    <style type="text/css">
+      body {
+        background: #6A6699;
+        color: #141f1f;
+        font-family: 'Open Sans';
+        text-align: center;
+      }
+
+      h1 {
+        color: #d2d1e0;
+        font-family: 'Oswald';
+        text-transform: uppercase;
+        margin: 50px 0 20px;
+      }
+
+      h2 {
+        margin: 0 0 50px;
+      }
+
+      section {
+        background: #ffffff;
+        border-radius: 5px;
+        margin: 0 auto;
+        max-width: 600px;
+        padding: 60px;
+      }
+
+      article {
+        margin-bottom: 20px;
+      }
+
+      .input-group {
+        float: left;
+        width: 50%;
+      }
+
+      .clear {
+        clear: both;
+      }
+
+      input {
+        border-bottom: 1px solid #d1e0e0;
+        border-left: 0;
+        border-right: 0;
+        border-top: 0;
+        border-radius: 2px;
+        display: block;
+        font-family: 'Oswald';
+        font-size: 20px;
+        outline: none;
+        width: 80%;
+        margin: 0 auto 20px;
+        text-align: center;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 10px;
+      }
+
+      svg {
+        margin: 30px auto;
+      }
+
+      button {
+        background: #ffffff;
+        border: 2px solid #6A6699;
+        border-radius: 2px;
+        cursor: pointer;
+        display: inline-block;
+        font-family: 'Oswald';
+        font-size: 18px;
+        margin-bottom: 20px;
+        padding: 5px 20px;
+        width: 100%;
+      }
+
+      .html {
+        background: #d2d1e0;
+        padding: 10px;
+        text-align: left;
+        font-family: monospace;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+
+  <body onload="calculateDotGeometry()">
+    <h1>Wacky growing dot generator</h1>
+    <h2>Using D3.js to generate proportionally scaling lines of dots</h2>
+    <p> Pointless... maybe? Give it a try and see.</p>
+    <section>
+      <article>
+        <div class="input-group">
+          <label>Dot Count (#)</label>
+          <input value="10" type="number" name="dot_count">
+        </div>
+        <div class="input-group">
+          <label>Dot Size (#)</label>
+          <input value="10" type="number" name="dot_diameter">
+        </div>
+        <div class="input-group">
+          <label>Dot Spacing (#)</label>
+          <input value="10" type="number" name="dot_space">
+        </div>
+        <div class="input-group">
+          <label>Dot Scale Rate (%)</label>
+          <input value="20" type="number" name="dot_increment">
+        </div>
+        <div class="input-group">
+          <label>Dot Fill Color (hex)</label>
+          <input value="CCCCCC" type="text" name="dot_fill">
+        </div>
+        <div class="input-group">
+          <label>Dot orientation</label>
+          <select class="selectpicker" value="CCCCCC" type="text" id="dot_orientation">
+            <option checked>Top</option>
+            <option>Middle</option>
+            <option>Bottom</option>
+          </select>
+        </div>
+        <div class="clear"></div>
+      </article>
+      <button type="button" onclick="calculateDotGeometry()">Get dots</button>
+
+      <div class="dots"></div>
+      <p>Copy and past this into a text file and save it with the .svg file extension</p>
+      <div class="html">
+      </div>
+    </section>
+  </body>
+</html>
